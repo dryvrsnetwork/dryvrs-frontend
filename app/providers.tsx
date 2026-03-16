@@ -1,18 +1,36 @@
-'use client'
+// app/providers.tsx
+'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
-import { WagmiProvider } from 'wagmi'
-import { config } from '../wagmi'
+import { OnchainKitProvider } from '@coinbase/onchainkit';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createConfig, http, WagmiProvider } from 'wagmi';
+import { foundry } from 'wagmi/chains';
+import { coinbaseWallet } from 'wagmi/connectors';
+import { ReactNode, useState } from 'react';
 
-export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient())
+const wagmiConfig = createConfig({
+  chains: [foundry],
+  connectors: [
+    coinbaseWallet({
+      appName: 'Dryvrs Network',
+      preference: 'smartWalletOnly', // The invisible Web3 magic
+    }),
+  ],
+  transports: {
+    [foundry.id]: http('http://localhost:8545'),
+  },
+});
+
+export function Providers({ children }: { children: ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        {children}
+        <OnchainKitProvider chain={foundry}>
+          {children}
+        </OnchainKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
-  )
+  );
 }
