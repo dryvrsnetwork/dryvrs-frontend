@@ -2,7 +2,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
 
-export default function ProfitCalculator({ offerUsdc, distanceMiles = 5, driverWallet }) {
+// 1. Define the strict TypeScript structure
+interface ProfitCalculatorProps {
+  offerUsdc: number;
+  distanceMiles?: number;
+  driverWallet?: string;
+}
+
+// 2. Apply it to the component
+export default function ProfitCalculator({ offerUsdc, distanceMiles = 5, driverWallet }: ProfitCalculatorProps) {
   const [stats, setStats] = useState<any>(null);
   const [gasPrice, setGasPrice] = useState(3.25); // Hardcoded MVP fuel price
 
