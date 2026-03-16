@@ -1,10 +1,10 @@
 // constants/contracts.ts
 
-// The V2 Local Anvil Deployments (Synced to your latest deployment)
-export const MOCK_USDC_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-export const RIDE_ESCROW_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
-export const FEE_SPLITTER_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-export const DGEN_ADDRESS = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+// The Live Base Sepolia Deployments
+export const MOCK_USDC_ADDRESS = "0x1410609B6cD93C6fbF8720c03B36779E706a9ae2";
+export const FEE_SPLITTER_ADDRESS = "0xC9560d7A8b306E62Fbb8C52A334B9697A368df75";
+export const DGEN_ADDRESS = "0xb984CbA58269B2b51DaB2C0B67436f914b7ac1d5";
+export const RIDE_ESCROW_ADDRESS = "0x7371ED62b67BE9DA1EC0bE5A8B8e6b189e99ddaf";
 
 export const MOCK_USDC_ABI = [
   {
@@ -41,8 +41,12 @@ export const RIDE_ESCROW_ABI = [
     "type": "function"
   },
   {
-    "inputs": [{ "internalType": "uint256", "name": "rideId", "type": "uint256" }],
-    "name": "completeRide",
+    "inputs": [
+      { "internalType": "uint256", "name": "rideId", "type": "uint256" },
+      { "internalType": "bytes32", "name": "telemetryHash", "type": "bytes32" },
+      { "internalType": "bytes", "name": "oracleSignature", "type": "bytes" }
+    ],
+    "name": "completeRideGhostMode",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

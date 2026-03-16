@@ -7,7 +7,9 @@ import dynamic from 'next/dynamic';
 import { useBidding } from '../../hooks/useBidding';
 import { useRadar } from '../../hooks/useRadar'; 
 import { getLiveRouteData } from '../../utils/routing'; 
-import { supabase } from '../../utils/supabaseClient'; // 🔧 Added for direct DB writes
+import { supabase } from '../../utils/supabaseClient';
+// 🔧 INJECTION: The new Ghost Mode UI component
+import GhostTelemetryHUD from '../../components/GhostTelemetryHUD'; 
 
 const RadarMap = dynamic(() => import('../../components/LiveMap'), { 
   ssr: false,
@@ -38,7 +40,7 @@ export default function DryvrPortal() {
 
   const safeRideId = rideId && !isNaN(Number(rideId)) ? BigInt(rideId) : BigInt(0);
 
-  const { bids, cancelBid } = useBidding(rideId); // 🔧 FIX 2: Removed broken submitBid import
+  const { bids, cancelBid } = useBidding(rideId); 
   const { activeRides } = useRadar(); 
 
   useEffect(() => setMounted(true), []);
@@ -54,12 +56,10 @@ export default function DryvrPortal() {
   const lockedAmount = rideData ? Number((rideData as any)[3]) : 0; 
   const rideState = lockedAmount > 0 ? Number((rideData as any)[6]) : undefined; 
 
-  // 🔧 FIX 1: Pull addresses safely from the Supabase Radar, NOT the blockchain
   const targetedRide = activeRides.find(r => r.ride_id.toString() === rideId);
   const origin = targetedRide ? targetedRide.origin : "";
   const destination = targetedRide ? targetedRide.destination : "";
 
-  // 🔧 FIX 2: Define the missing bid submission logic right here
   const submitDriverBid = async (targetRideId: string, bidAmount: number) => {
     const { error } = await supabase.from('bids').insert([{
       ride_id: Number(targetRideId),
@@ -208,6 +208,14 @@ export default function DryvrPortal() {
                   <p><span className="text-zinc-400">Status:</span> <span className="text-white">{isLoading ? "Scanning..." : getRideStateString(rideState)}</span></p>
                   <p><span className="text-zinc-400">Rydr Vault:</span> <span className="text-emerald-400 font-bold">{(lockedAmount / 10**6).toFixed(2)} USDC</span></p>
                 </div>
+              )}
+
+              {/* 🔧 INJECTION: Render the Ghost HUD only when the ride is actively in transit */}
+              {rideId && rideState === 1 && targetedRide && (
+                <GhostTelemetryHUD 
+                  rideId={rideId} 
+                  riderAddress={targetedRide.rider_wallet || "AWAITING_BLE_HANDSHAKE"} 
+                />
               )}
 
               {rideId && rideState === 0 && (

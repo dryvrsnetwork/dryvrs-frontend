@@ -85,7 +85,7 @@ export default function RydrPortal() {
     ? `${currentDriver.slice(0,6)}...${currentDriver.slice(-4)}` 
     : "Searching...";
 
-  const FARE_AMOUNT = parseUnits(dynamicFare.toString(), 6); // V2 USDC uses 6 decimals
+  const FARE_AMOUNT = parseUnits(dynamicFare.toString(), 6);
 
   const handleApprove = async () => {
     try {
@@ -180,7 +180,6 @@ export default function RydrPortal() {
                 <div className="flex items-center gap-2">
                   <button 
                     onClick={() => {
-                      // 🔧 THE FIX: Force increment manually
                       setRideId((prev) => (Number(prev) + 1).toString());
                       setRouteData(null); 
                     }}
@@ -247,6 +246,38 @@ export default function RydrPortal() {
                 <p><span className="text-zinc-400">Dryvr:</span> <span className="text-white">{isLoading ? "Scanning..." : displayDriver}</span></p>
                 <p><span className="text-zinc-400">Market Fare:</span> <span className="text-cyan-400 font-bold">{lockedAmount > 0 ? (lockedAmount / 10**6).toFixed(2) : dynamicFare.toFixed(2)} USDC</span></p>
               </div>
+
+              {/* 🔧 INJECTION: Rider's Ghost Mode UI (BLE Handshake Status) */}
+              {rideState === 1 && (
+                <div className="bg-black/80 border border-cyan-900 rounded-xl p-4 font-mono text-sm shadow-[0_0_15px_rgba(6,182,212,0.15)] mt-4 animate-fade-in text-left">
+                  <div className="flex justify-between items-center border-b border-cyan-900 pb-2 mb-3">
+                    <div className="text-cyan-500 font-bold tracking-widest text-xs flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
+                      GHOST MODE ACTIVE
+                    </div>
+                    <div className="text-zinc-500 text-[10px]">BLE: BROADCASTING</div>
+                  </div>
+                  
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Proximity Link:</span>
+                      <span className="text-cyan-400">ESTABLISHED</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Telemetry Sweep:</span>
+                      <span className="text-cyan-400 animate-pulse">SYNCING BACKGROUND...</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">ZK-Routing:</span>
+                      <span className="text-cyan-400">ENCRYPTED</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 pt-3 border-t border-cyan-900/50 text-[10px] text-zinc-500 text-center">
+                    Ride will automatically settle upon exit (BLE Disconnect)
+                  </div>
+                </div>
+              )}
 
               {rideState === 0 && bids.length > 0 && (
                 <div className="mt-4 bg-zinc-900/80 border border-cyan-500/30 p-4 rounded-xl space-y-3">

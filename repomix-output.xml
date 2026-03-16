@@ -1,0 +1,236 @@
+This file is a merged representation of a subset of the codebase, containing specifically included files and files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Only files matching these patterns are included: src/DGEN.sol, src/RideEscrow.sol, constants/contracts.ts, hooks/**, app/api/oracle/verify-ghost/route.ts
+- Files matching these patterns are excluded: node_modules/**, .next/**, package-lock.json, *.xml
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+constants/contracts.ts
+hooks/useBidding.ts
+hooks/useRadar.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="constants/contracts.ts">
+// constants/contracts.ts
+
+// The V2 Local Anvil Deployments (Synced to your latest deployment)
+export const MOCK_USDC_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+export const RIDE_ESCROW_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
+export const FEE_SPLITTER_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+export const DGEN_ADDRESS = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+
+export const MOCK_USDC_ABI = [
+  {
+    "inputs": [
+      { "internalType": "address", "name": "spender", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "approve",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+] as const;
+
+export const RIDE_ESCROW_ABI = [
+  {
+    "inputs": [
+      { "internalType": "address", "name": "paymentToken", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "internalType": "bytes32", "name": "payloadHash", "type": "bytes32" },
+      { "internalType": "uint256", "name": "expiry", "type": "uint256" },
+      { "internalType": "bytes", "name": "backendSignature", "type": "bytes" }
+    ],
+    "name": "requestRide",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "rideId", "type": "uint256" }],
+    "name": "acceptRide",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "rideId", "type": "uint256" }],
+    "name": "completeRide",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "rideId", "type": "uint256" }],
+    "name": "cancelRide",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextRideId",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "id", "type": "uint256" }],
+    "name": "rides",
+    "outputs": [
+      { "internalType": "address", "name": "rider", "type": "address" },
+      { "internalType": "address", "name": "driver", "type": "address" },
+      { "internalType": "address", "name": "paymentToken", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "internalType": "uint256", "name": "feeAmount", "type": "uint256" },
+      { "internalType": "bytes32", "name": "payloadHash", "type": "bytes32" },
+      { "internalType": "uint8", "name": "status", "type": "uint8" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const;
+</file>
+
+<file path="hooks/useBidding.ts">
+import { useState, useEffect } from 'react';
+import { supabase } from '../utils/supabaseClient';
+
+export const useBidding = (rideId: string) => {
+    const [bids, setBids] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchBids = async () => {
+            // 🛑 Prevent it from crashing if the ID isn't ready yet
+            if (!rideId || rideId === "0") return; 
+
+            const { data, error } = await supabase
+                .from('bids')
+                .select('*')
+                .eq('ride_id', rideId);
+
+            if (error) {
+                // 🚨 This forces JavaScript to print the ACTUAL English error sentence
+                console.error("Radar Error:", error.message, error.hint);
+            } else if (data) {
+                setBids(data);
+            }
+        };
+
+        fetchBids();
+
+        // 📡 Real-time listener: Watch for drivers making offers
+        const subscription = supabase
+            .channel(`bids_listener_${rideId}`)
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'bids', 
+                filter: `ride_id=eq.${rideId}` 
+            }, () => {
+                fetchBids();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(subscription);
+        };
+    }, [rideId]);
+
+    const acceptBid = async (bidId: string | number) => {
+        // Handled primarily on-chain in MVP, but hook requires this function
+        console.log("Bid accepted:", bidId);
+    };
+
+    const cancelBid = async (bidId: string | number) => {
+        try {
+            await supabase.from('bids').delete().eq('id', bidId);
+            setBids(prev => prev.filter(b => b.id !== bidId));
+        } catch (error) {
+            console.error("Failed to reject bid:", error);
+        }
+    };
+
+    return { bids, acceptBid, cancelBid };
+};
+</file>
+
+<file path="hooks/useRadar.ts">
+import { useState, useEffect } from 'react';
+import { supabase } from '../utils/supabaseClient';
+
+export const useRadar = () => {
+  const [activeRides, setActiveRides] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchRides = async () => {
+      const { data, error } = await supabase
+        .from('active_rides')
+        .select('*')
+        .eq('status', 'PENDING')
+        .order('created_at', { ascending: false });
+        
+      if (error) console.error("Radar Error:", error);
+      else if (data) setActiveRides(data);
+    };
+
+    fetchRides();
+
+    // 📡 Live Antenna: Listen for new riders pinging the network
+    const subscription = supabase
+      .channel('public:active_rides')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'active_rides' }, () => {
+        fetchRides();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
+
+  return { activeRides };
+};
+</file>
+
+</files>
