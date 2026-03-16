@@ -1,15 +1,14 @@
-// app/providers.tsx
 'use client';
 
 import { OnchainKitProvider } from '@coinbase/onchainkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createConfig, http, WagmiProvider } from 'wagmi';
-import { foundry } from 'wagmi/chains';
+import { baseSepolia } from 'wagmi/chains';
 import { coinbaseWallet } from 'wagmi/connectors';
 import { ReactNode, useState } from 'react';
 
 const wagmiConfig = createConfig({
-  chains: [foundry],
+  chains: [baseSepolia],
   connectors: [
     coinbaseWallet({
       appName: 'Dryvrs Network',
@@ -17,7 +16,7 @@ const wagmiConfig = createConfig({
     }),
   ],
   transports: {
-    [foundry.id]: http('http://localhost:8545'),
+    [baseSepolia.id]: http('https://sepolia.base.org'),
   },
 });
 
@@ -27,7 +26,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <OnchainKitProvider chain={foundry}>
+        <OnchainKitProvider chain={baseSepolia}>
           {children}
         </OnchainKitProvider>
       </QueryClientProvider>
