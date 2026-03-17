@@ -1,5 +1,4 @@
 'use client'
-import { generateQuoteSignature } from '../../utils/oracle';
 import { useState, useEffect } from 'react';
 import { useAccount, useConnect, useDisconnect, useWriteContract, useReadContract, usePublicClient } from 'wagmi'
 import { parseUnits } from 'viem';
@@ -101,24 +100,31 @@ export default function RydrPortal() {
 
   const handleRequestRide = async () => {
     try {
-      const ANVIL_DEPLOYER_PK = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
       const payloadHash = '0x0000000000000000000000000000000000000000000000000000000000000000'; 
       const expiry = Math.floor(Date.now() / 1000) + 600; 
       
-      const signature = await generateQuoteSignature(
-        address as string, 
-        MOCK_USDC_ADDRESS, 
-        FARE_AMOUNT.toString(), 
-        payloadHash, 
-        expiry, 
-        ANVIL_DEPLOYER_PK
-      );
+      // 1. Ping the secure Vercel Oracle for the signature
+      const response = await fetch('/api/oracle/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rider: address,
+          paymentToken: MOCK_USDC_ADDRESS,
+          amount: FARE_AMOUNT.toString(),
+          payloadHash: payloadHash,
+          expiry: expiry
+        })
+      });
 
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || "Oracle failed to sign quote");
+
+      // 2. Send the verified signature to the blockchain
       await writeContractAsync({
         address: RIDE_ESCROW_ADDRESS,
         abi: RIDE_ESCROW_ABI,
         functionName: 'requestRide',
-        args: [MOCK_USDC_ADDRESS, FARE_AMOUNT, payloadHash, BigInt(expiry), signature as `0x${string}`],
+        args: [MOCK_USDC_ADDRESS, FARE_AMOUNT, payloadHash, BigInt(expiry), data.signature],
       });
 
       const nextId = currentCounter ? Number(currentCounter) : 0; 
@@ -138,7 +144,10 @@ export default function RydrPortal() {
       alert(`Ride requested! Radar ping sent to all local Dryvrs.`);
       setRideId(nextId.toString()); 
       refetch();
-    } catch (error) { console.error("Failed to request:", error); }
+    } catch (error) { 
+      console.error("Failed to request:", error); 
+      alert("Failed to request ride. Check console for details.");
+    }
   };
 
   const handleCancelRide = async () => {
