@@ -8,8 +8,8 @@ import { useBidding } from '../../hooks/useBidding';
 import { useRadar } from '../../hooks/useRadar'; 
 import { getLiveRouteData } from '../../utils/routing'; 
 import { supabase } from '../../utils/supabaseClient';
-// 🔧 INJECTION: The new Ghost Mode UI component
 import GhostTelemetryHUD from '../../components/GhostTelemetryHUD'; 
+import VanguardVault from '../../components/VanguardVault'; // 🔧 INJECTION: Vanguard Vault
 
 const RadarMap = dynamic(() => import('../../components/LiveMap'), { 
   ssr: false,
@@ -135,6 +135,9 @@ export default function DryvrPortal() {
           {isConnected ? (
             <div className="space-y-4 text-center">
               <p className="text-emerald-400 font-mono text-sm border-b border-zinc-800/50 pb-3">Operator: {address?.slice(0,6)}...{address?.slice(-4)}</p>
+              
+              {/* 🔧 INJECTION: Rendering the Vanguard Vault */}
+              <VanguardVault />
               
               {!rideId && (
                 <div className="text-left space-y-2">
