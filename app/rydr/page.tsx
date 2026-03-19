@@ -27,10 +27,7 @@ const getRideStateString = (stateCode: number | undefined) => {
 export default function RydrPortal() {
   const { address, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
-  const { disconnect } = useDisconnect()
   const { writeContractAsync } = useWriteContract()
-  
-  const publicClient = usePublicClient()
   
   const [rideId, setRideId] = useState("0");
   const [origin, setOrigin] = useState("Milwaukee Public Market");
@@ -103,7 +100,7 @@ export default function RydrPortal() {
       const payloadHash = '0x0000000000000000000000000000000000000000000000000000000000000000'; 
       const expiry = Math.floor(Date.now() / 1000) + 600; 
       
-      // 1. Ping the secure Vercel Oracle for the signature
+      // 1. Fetch exact Zero-Knowledge signature from the Vercel backend
       const response = await fetch('/api/oracle/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,12 +116,12 @@ export default function RydrPortal() {
       const data = await response.json();
       if (!data.success) throw new Error(data.error || "Oracle failed to sign quote");
 
-      // 2. Send the verified signature to the blockchain
+      // 2. Transmit the verified payload directly to the Base Sepolia contract
       await writeContractAsync({
         address: RIDE_ESCROW_ADDRESS,
         abi: RIDE_ESCROW_ABI,
         functionName: 'requestRide',
-        args: [MOCK_USDC_ADDRESS, FARE_AMOUNT, payloadHash, BigInt(expiry), data.signature],
+        args: [MOCK_USDC_ADDRESS, FARE_AMOUNT, payloadHash, BigInt(expiry), data.signature as `0x${string}`],
       });
 
       const nextId = currentCounter ? Number(currentCounter) : 0; 
@@ -158,9 +155,7 @@ export default function RydrPortal() {
         functionName: 'cancelRide',
         args: [safeRideId],
       });
-      
       await supabase.from('active_rides').update({ status: 'CANCELLED' }).eq('ride_id', Number(safeRideId));
-      
       refetch();
     } catch (error) { console.error("Failed to cancel:", error); }
   };
@@ -193,7 +188,6 @@ export default function RydrPortal() {
                       setRouteData(null); 
                     }}
                     className="bg-cyan-900/50 hover:bg-cyan-800 border border-cyan-500/30 text-cyan-400 px-3 py-2 rounded-lg text-xs font-bold font-mono transition-colors active:scale-95"
-                    title="Skip to next empty ride slot"
                   >
                     + NEW
                   </button>
@@ -217,7 +211,6 @@ export default function RydrPortal() {
                       type="text" 
                       value={origin}
                       onChange={(e) => setOrigin(e.target.value)}
-                      placeholder="e.g. 123 Main St, Milwaukee"
                       className="bg-black/50 border border-zinc-800 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-cyan-400 transition-colors"
                     />
                   </div>
@@ -228,7 +221,6 @@ export default function RydrPortal() {
                       type="text" 
                       value={destination}
                       onChange={(e) => setDestination(e.target.value)}
-                      placeholder="e.g. Mitchell Airport"
                       className="bg-black/50 border border-zinc-800 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-cyan-400 transition-colors"
                     />
                   </div>
@@ -256,7 +248,6 @@ export default function RydrPortal() {
                 <p><span className="text-zinc-400">Market Fare:</span> <span className="text-cyan-400 font-bold">{lockedAmount > 0 ? (lockedAmount / 10**6).toFixed(2) : dynamicFare.toFixed(2)} USDC</span></p>
               </div>
 
-              {/* 🔧 INJECTION: Rider's Ghost Mode UI (BLE Handshake Status) */}
               {rideState === 1 && (
                 <div className="bg-black/80 border border-cyan-900 rounded-xl p-4 font-mono text-sm shadow-[0_0_15px_rgba(6,182,212,0.15)] mt-4 animate-fade-in text-left">
                   <div className="flex justify-between items-center border-b border-cyan-900 pb-2 mb-3">
@@ -281,10 +272,6 @@ export default function RydrPortal() {
                       <span className="text-cyan-400">ENCRYPTED</span>
                     </div>
                   </div>
-                  
-                  <div className="mt-4 pt-3 border-t border-cyan-900/50 text-[10px] text-zinc-500 text-center">
-                    Ride will automatically settle upon exit (BLE Disconnect)
-                  </div>
                 </div>
               )}
 
@@ -300,12 +287,7 @@ export default function RydrPortal() {
                       </div>
                       
                       <div className="flex gap-2">
-                        <button 
-                          onClick={() => cancelBid(bid.id)}
-                          className="bg-red-900/50 hover:bg-red-800 text-red-200 text-xs font-bold py-2 px-3 rounded transition-colors"
-                        >
-                          Reject
-                        </button>
+                        <button onClick={() => cancelBid(bid.id)} className="bg-red-900/50 hover:bg-red-800 text-red-200 text-xs font-bold py-2 px-3 rounded transition-colors">Reject</button>
                         <button 
                           onClick={async () => {
                             try {
@@ -313,15 +295,10 @@ export default function RydrPortal() {
                               await supabase.from('active_rides').update({ status: 'ACCEPTED' }).eq('ride_id', Number(safeRideId));
                               alert(`Offer accepted! The Dryvr is clear to accept the ride on-chain.`);
                               refetch(); 
-                            } catch (error) {
-                              console.error("Failed:", error);
-                              alert("Transaction failed! Check console.");
-                            }
+                            } catch (error) { console.error("Failed:", error); }
                           }}
                           className="bg-cyan-600/80 hover:bg-cyan-500 text-white text-xs font-bold py-2 px-3 rounded transition-colors"
-                        >
-                          Accept
-                        </button>
+                        >Accept</button>
                       </div>
                     </div>
                   ))}
@@ -330,20 +307,12 @@ export default function RydrPortal() {
 
               {lockedAmount === 0 || rideState === undefined ? (
                 <div className="flex gap-3 pt-2">
-                  <button onClick={handleApprove} disabled={!routeData} className="flex-1 bg-zinc-800/80 hover:bg-zinc-700 disabled:opacity-30 text-white font-bold py-3 px-4 rounded-xl transition-all border border-zinc-700">
-                    1. Approve
-                  </button>
-                  <button onClick={handleRequestRide} disabled={!routeData} className="flex-1 bg-cyan-600/80 hover:bg-cyan-500 disabled:opacity-30 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all border border-cyan-500/50">
-                    2. Request
-                  </button>
+                  <button onClick={handleApprove} disabled={!routeData} className="flex-1 bg-zinc-800/80 hover:bg-zinc-700 disabled:opacity-30 text-white font-bold py-3 px-4 rounded-xl transition-all border border-zinc-700">1. Approve</button>
+                  <button onClick={handleRequestRide} disabled={!routeData} className="flex-1 bg-cyan-600/80 hover:bg-cyan-500 disabled:opacity-30 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all border border-cyan-500/50">2. Request</button>
                 </div>
               ) : (
                 <div className="flex gap-3 pt-2">
-                  {rideState === 0 && (
-                    <button onClick={handleCancelRide} className="flex-1 bg-red-900/80 hover:bg-red-800 text-white font-bold py-3 px-4 rounded-xl transition-all border border-red-500/50">
-                      Cancel Ping
-                    </button>
-                  )}
+                  {rideState === 0 && <button onClick={handleCancelRide} className="flex-1 bg-red-900/80 hover:bg-red-800 text-white font-bold py-3 px-4 rounded-xl transition-all border border-red-500/50">Cancel Ping</button>}
                 </div>
               )}
               
@@ -351,9 +320,7 @@ export default function RydrPortal() {
           ) : (
             <button 
               onClick={() => {
-                const coinbaseConnector = connectors.find(
-                  (c) => c.id.toLowerCase().includes('coinbase') || c.name.toLowerCase().includes('coinbase')
-                );
+                const coinbaseConnector = connectors.find((c) => c.id.toLowerCase().includes('coinbase') || c.name.toLowerCase().includes('coinbase'));
                 connect({ connector: coinbaseConnector || connectors[0] });
               }} 
               className="w-full bg-[#0052FF]/90 hover:bg-[#0052FF] text-white font-bold py-4 rounded-xl backdrop-blur-md shadow-[0_0_20px_rgba(0,82,255,0.3)] transition-all"

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { keccak256, encodeAbiParameters, parseAbiParameters } from 'viem';
+import { keccak256, encodeAbiParameters, toBytes } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 
 export async function POST(request: Request) {
@@ -11,17 +11,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
     }
 
-    // Load the Master Treasury Signer from Vercel Environment Variables
     const pk = process.env.BACKEND_PRIVATE_KEY;
-    if (!pk) throw new Error("CRITICAL: Missing BACKEND_PRIVATE_KEY");
+    if (!pk) throw new Error("CRITICAL: Missing BACKEND_PRIVATE_KEY in environment");
     
-    // Ensure formatting
-    const formattedPk = pk.startsWith('0x') ? pk : `0x${pk}`;
+    const cleanPk = pk.replace(/['"]/g, '').trim();
+    const formattedPk = cleanPk.startsWith('0x') ? cleanPk : `0x${cleanPk}`;
+    
     const account = privateKeyToAccount(formattedPk as `0x${string}`);
 
-    // EXACT MATCH to Solidity's abi.encode(msg.sender, paymentToken, amount, payloadHash, expiry)
+    // Encode variables exactly like Solidity's abi.encode
     const encodedData = encodeAbiParameters(
-      parseAbiParameters('address, address, uint256, bytes32, uint256'),
+      [
+        { type: 'address' },
+        { type: 'address' },
+        { type: 'uint256' },
+        { type: 'bytes32' },
+        { type: 'uint256' }
+      ],
       [
         rider as `0x${string}`, 
         paymentToken as `0x${string}`, 
@@ -31,19 +37,17 @@ export async function POST(request: Request) {
       ]
     );
 
-    // Hash the encoded data
+    // Hash the encoded bytes (This outputs a "0x..." string)
     const structHash = keccak256(encodedData);
 
-    // Sign the hash (viem automatically adds the EthSignedMessage prefix)
-    const signature = await account.signMessage({ message: { raw: structHash } });
+    // CRITICAL FIX: toBytes() forces viem to sign the raw 32-byte array, 
+    // completely preventing it from accidentally signing the ASCII text string.
+    const signature = await account.signMessage({ message: { raw: toBytes(structHash) } });
 
-    return NextResponse.json({
-      success: true,
-      signature
-    });
+    return NextResponse.json({ success: true, signature });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Quote Oracle Error:", error);
-    return NextResponse.json({ error: "Oracle failed to sign quote" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Oracle failed to sign quote" }, { status: 500 });
   }
 }
