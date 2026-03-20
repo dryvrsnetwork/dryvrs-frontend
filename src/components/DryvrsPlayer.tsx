@@ -29,7 +29,6 @@ export default function DryvrsPlayer() {
 
   const nextTrack = () => {
     setCurrentTrack((prev) => (prev + 1) % playlist.length);
-    // Auto-play the next track when skipping
     setTimeout(() => {
       if (audioRef.current) audioRef.current.play();
     }, 50);
@@ -45,7 +44,7 @@ export default function DryvrsPlayer() {
   return (
     <div className="flex items-center justify-between py-4 text-zinc-300 font-mono">
       
-      {/* HARDWIRED ID ADDED HERE */}
+      {/* THIS IS THE HARDWIRED ID THE HOMEPAGE IS LOOKING FOR */}
       <audio 
         id="dryvrs-audio-core"
         ref={audioRef} 
