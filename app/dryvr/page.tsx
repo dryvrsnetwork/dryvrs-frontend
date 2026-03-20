@@ -9,7 +9,7 @@ import { useRadar } from '../../hooks/useRadar';
 import { getLiveRouteData } from '../../utils/routing'; 
 import { supabase } from '../../utils/supabaseClient';
 import GhostTelemetryHUD from '../../components/GhostTelemetryHUD'; 
-import VanguardVault from '../../components/VanguardVault'; // 🔧 INJECTION: Vanguard Vault
+import VanguardVault from '../../components/VanguardVault';
 
 const RadarMap = dynamic(() => import('../../components/LiveMap'), { 
   ssr: false,
@@ -46,7 +46,7 @@ export default function DryvrPortal() {
   useEffect(() => setMounted(true), []);
 
   const { data: rideData, refetch, isLoading } = useReadContract({
-    address: RIDE_ESCROW_ADDRESS,
+    address: RIDE_ESCROW_ADDRESS as `0x${string}`,
     abi: RIDE_ESCROW_ABI,
     functionName: 'rides',
     args: [safeRideId], 
@@ -88,7 +88,7 @@ export default function DryvrPortal() {
   const handleAcceptRide = async () => {
     try {
       await writeContractAsync({
-        address: RIDE_ESCROW_ADDRESS,
+        address: RIDE_ESCROW_ADDRESS as `0x${string}`,
         abi: RIDE_ESCROW_ABI,
         functionName: 'acceptRide',
         args: [safeRideId],
@@ -136,7 +136,6 @@ export default function DryvrPortal() {
             <div className="space-y-4 text-center">
               <p className="text-emerald-400 font-mono text-sm border-b border-zinc-800/50 pb-3">Operator: {address?.slice(0,6)}...{address?.slice(-4)}</p>
               
-              {/* 🔧 INJECTION: Rendering the Vanguard Vault */}
               <VanguardVault />
               
               {!rideId && (
@@ -213,7 +212,6 @@ export default function DryvrPortal() {
                 </div>
               )}
 
-              {/* 🔧 INJECTION: Render the Ghost HUD only when the ride is actively in transit */}
               {rideId && rideState === 1 && targetedRide && (
                 <GhostTelemetryHUD 
                   rideId={rideId} 
