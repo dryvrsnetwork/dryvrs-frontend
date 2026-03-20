@@ -1,171 +1,100 @@
 'use client';
-import { useState } from 'react';
-import Image from 'next/image';
-import DryvrsPlayer from '@/components/DryvrsPlayer';
+import { useState, useRef, useEffect } from 'react';
 
-// The exact playlist of images for the bottom bubble array (Matching your folder)
-const campaignPosters = [
-  { src: '/images/poster-01.jpg', alt: 'Campaign Poster 1' },
-  { src: '/images/poster-02.jpg', alt: 'Campaign Poster 2' },
-  { src: '/images/poster-03.jpg', alt: 'Campaign Poster 3' },
-  { src: '/images/indiana-jones.png', alt: 'The Illusion of Access' }
+// STAGE 1: The Playlist Array (Updated with exact Badger State Run filename)
+const playlist = [
+  { id: 1, title: 'Badger State Run', src: '/audio/10-the-badger-state-run.mp3' }, 
+  { id: 2, title: 'The Road Belongs', src: '/audio/1-the-road-belongs.mp3' },
+  { id: 3, title: 'System Override', src: '/audio/2-system-override.mp3' },
+  { id: 4, title: 'The Tax is Dead', src: '/audio/3-the-tax-is-dead.mp3' },
+  { id: 5, title: 'Sovereign Infrastructure', src: '/audio/4-sovereign-infrastructure.mp3' },
+  { id: 6, title: 'The Decentralized Grid', src: '/audio/5-the-decentralized-grid.mp3' },
+  { id: 7, title: 'The Ledger Ram', src: '/audio/6-the-ledger-ram.mp3' },
+  { id: 8, title: 'Indiana Jones Trap', src: '/audio/7-indiana-jones-trap.mp3' },
+  { id: 9, title: 'System Reboot', src: '/audio/8-system-reboot.mp3' }
 ];
 
-export default function Home() {
-  const [isGlitch, setIsGlitch] = useState(false);
-  const [selectedPosterIndex, setSelectedPosterIndex] = useState(null); 
+export default function DryvrsPlayer({ playTrigger }) {
+  const [currentTrack, setCurrentTrack] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
 
-  // The Gatekeeper Function: Unlocks audio and triggers the glitch
-  const handleOverride = () => {
-    setIsGlitch(true);
+  // THE IGNITION WIRE: Listens for the "Initiate System Override" button click
+  useEffect(() => {
+    if (playTrigger && audioRef.current && !isPlaying) {
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(err => console.error("Audio playback blocked:", err));
+    }
+  }, [playTrigger, isPlaying]);
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
   };
 
+  const nextTrack = () => {
+    setCurrentTrack((prev) => (prev + 1) % playlist.length);
+    setIsPlaying(true);
+  };
+
+  const prevTrack = () => {
+    setCurrentTrack((prev) => (prev - 1 + playlist.length) % playlist.length);
+    setIsPlaying(true);
+  };
+
+  useEffect(() => {
+    if (isPlaying && audioRef.current) {
+      audioRef.current.play();
+    }
+  }, [currentTrack]);
+
   return (
-    <main className="min-h-screen bg-black text-zinc-300 font-mono relative pb-32">
+    <div className="flex items-center justify-between py-4 text-zinc-300 font-mono">
       
-      {/* 1. The Hero Section (The Gatekeeper) */}
-      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-black">
-        {!isGlitch ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300 z-10">
-            <div className="absolute inset-0 z-0">
-              <Image 
-                src="/images/indiana-jones.png" 
-                alt="The Bait" 
-                fill 
-                className="object-contain p-4 md:p-16 opacity-50"
-                priority
-              />
-              <div className="absolute inset-0 bg-black/60" /> 
-            </div>
+      <audio 
+        ref={audioRef} 
+        src={playlist[currentTrack].src} 
+        onEnded={nextTrack}
+      />
 
-            <div className="z-10 text-center space-y-12 flex flex-col items-center">
-              <div>
-                <h1 className="text-4xl md:text-6xl font-light tracking-[0.2em] text-white uppercase drop-shadow-lg">
-                  The Illusion of Access
-                </h1>
-                <p className="mt-4 text-zinc-400 tracking-widest text-sm uppercase">Awaiting Protocol...</p>
-              </div>
-              
-              <button 
-                onClick={handleOverride}
-                className="px-8 py-4 bg-red-900/80 hover:bg-red-600 text-white font-bold tracking-widest uppercase border border-red-500/50 hover:border-red-400 transition-all duration-300 shadow-[0_0_20px_rgba(220,38,38,0.2)] hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] cursor-pointer"
-              >
-                Initiate System Override
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="absolute inset-0 animate-pulse transition-opacity duration-100">
-            <Image 
-              src="/images/ledger-ram.jpeg" 
-              alt="The Switch" 
-              fill 
-              className="object-cover opacity-80 mix-blend-difference"
-              priority
-            />
-            <div className="absolute inset-0 bg-red-900/20 mix-blend-color-burn" />
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-10 text-center pb-20">
-              <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-red-600 uppercase drop-shadow-[0_0_20px_rgba(220,38,38,0.8)]">
-                Dryvrs Network
-              </h1>
-              <h2 className="text-2xl md:text-4xl font-bold tracking-widest text-white mt-2 uppercase">
-                System Override
-              </h2>
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* 2. The Manifesto Nodes (Large Vertical Scroll) */}
-      {/* NOTE: If your nodes are saved as .png on your computer, change .jpg to .png here */}
-      <section className="max-w-6xl mx-auto px-6 py-32 space-y-40 relative z-10">
-        
-        <div className="flex flex-col md:flex-row items-center gap-12 border-l-2 border-zinc-800 pl-8 md:pl-12">
-          <div className="w-full md:w-1/2 relative h-[500px] md:h-[700px]">
-            <Image src="/images/node-01.jpg" alt="Manifesto Node 1" fill className="object-cover grayscale hover:grayscale-0 transition-all duration-700 border border-zinc-900" />
-          </div>
-          <div className="w-full md:w-1/2 space-y-6">
-            <h3 className="text-sm font-bold text-red-600 tracking-widest uppercase">Node 01</h3>
-            <h2 className="text-3xl md:text-5xl font-bold uppercase text-white tracking-tight">The 30% Tax is Dead</h2>
-            <p className="text-zinc-400 text-lg md:text-xl leading-relaxed">
-              The legacy transit model relies on extraction. The rider pays a premium, the driver takes a fraction, and centralized servers absorb the spread. That ends now. The smart contract replaces the middleman, routing capital directly to the sovereign operator.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row-reverse items-center gap-12 border-r-2 border-zinc-800 pr-8 md:pr-12 text-right">
-          <div className="w-full md:w-1/2 relative h-[500px] md:h-[700px]">
-            <Image src="/images/node-02.jpg" alt="Manifesto Node 2" fill className="object-cover grayscale hover:grayscale-0 transition-all duration-700 border border-zinc-900" />
-          </div>
-          <div className="w-full md:w-1/2 space-y-6">
-            <h3 className="text-sm font-bold text-red-600 tracking-widest uppercase">Node 02</h3>
-            <h2 className="text-3xl md:text-5xl font-bold uppercase text-white tracking-tight">Sovereign Infrastructure</h2>
-            <p className="text-zinc-400 text-lg md:text-xl leading-relaxed">
-              You are not an algorithmic employee responding to a surge map. You own the physical infrastructure—the vehicle. When you execute the physical transport, you capture 100% of the fare. Algorithms no longer dictate your value.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row items-center gap-12 border-l-2 border-zinc-800 pl-8 md:pl-12">
-          <div className="w-full md:w-1/2 relative h-[500px] md:h-[700px]">
-            <Image src="/images/node-03.jpg" alt="Manifesto Node 3" fill className="object-cover grayscale hover:grayscale-0 transition-all duration-700 border border-zinc-900" />
-          </div>
-          <div className="w-full md:w-1/2 space-y-6">
-            <h3 className="text-sm font-bold text-red-600 tracking-widest uppercase">Node 03</h3>
-            <h2 className="text-3xl md:text-5xl font-bold uppercase text-white tracking-tight">The Decentralized Grid</h2>
-            <p className="text-zinc-400 text-lg md:text-xl leading-relaxed">
-              The ride-hailing grid is no longer a corporate monopoly; it is a public utility. Independent node operators validate the transactions, ensuring the network is permanently secured by the human beings who actually use it.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. The Campaign Bubble Array & Manifesto Link */}
-      <section className="max-w-4xl mx-auto px-6 pb-20 pt-10 relative z-10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-black/60 backdrop-blur-md border border-zinc-900 p-6 rounded-[2rem]">
-          
-          <div className="space-y-4 text-center md:text-left">
-            <h3 className="text-xs text-zinc-500 tracking-widest uppercase">Intercepted Transmissions</h3>
-            <div className="flex -space-x-4 hover:space-x-2 transition-all duration-300 ease-out group">
-              {campaignPosters.map((poster, index) => (
-                <button 
-                  key={index} 
-                  onClick={() => setSelectedPosterIndex(index)}
-                  className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border-2 border-zinc-800 hover:border-red-500 transition-all duration-300 hover:scale-110 hover:z-30 shadow-[0_0_15px_rgba(0,0,0,0.5)] z-10 cursor-pointer bg-black"
-                >
-                  <Image src={poster.src} alt={poster.alt} fill className="object-cover grayscale hover:grayscale-0 transition-all duration-500" />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <a href="/manifesto.pdf" target="_blank" rel="noopener noreferrer" className="text-xs md:text-sm tracking-[0.2em] text-white border border-red-600 bg-red-900/40 px-6 py-4 hover:bg-red-600 transition-all uppercase rounded-full flex items-center gap-2 shadow-[0_0_15px_rgba(220,38,38,0.2)] hover:shadow-[0_0_25px_rgba(220,38,38,0.6)] cursor-pointer">
-            Read The Manifesto <span className="text-red-400">→</span>
-          </a>
-        </div>
-      </section>
-
-      {/* 4. Full-Screen Poster Viewer (Modal) */}
-      {selectedPosterIndex !== null && (
-        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <button onClick={() => setSelectedPosterIndex(null)} className="absolute top-6 right-6 md:top-10 md:right-10 text-white hover:text-red-500 text-4xl z-50 transition-colors">✕</button>
-          <button onClick={() => setSelectedPosterIndex(prev => prev > 0 ? prev - 1 : campaignPosters.length - 1)} className="absolute left-2 md:left-10 text-zinc-500 hover:text-white text-6xl z-50 transition-colors pb-4">‹</button>
-          
-          <div className="relative w-full h-[85vh] max-w-4xl mx-12">
-            <Image src={campaignPosters[selectedPosterIndex].src} alt={campaignPosters[selectedPosterIndex].alt} fill className="object-contain" />
-          </div>
-
-          <button onClick={() => setSelectedPosterIndex(prev => prev < campaignPosters.length - 1 ? prev + 1 : 0)} className="absolute right-2 md:right-10 text-zinc-500 hover:text-white text-6xl z-50 transition-colors pb-4">›</button>
-        </div>
-      )}
-
-      {/* 5. The Pinned Audio Player */}
-      <div className="fixed bottom-0 left-0 w-full z-50 border-t border-zinc-900 bg-black/95 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4">
-          <DryvrsPlayer />
-        </div>
+      <div className="flex flex-col w-1/3">
+        <span className="text-xs tracking-widest text-red-600 uppercase">Testnet Radio</span>
+        <span className="text-sm font-bold text-white truncate">
+          {playlist[currentTrack].title}
+        </span>
       </div>
 
-    </main>
+      <div className="flex items-center space-x-6">
+        <button onClick={prevTrack} className="hover:text-red-500 transition-colors duration-200">
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+        </button>
+        
+        <button onClick={togglePlay} className="w-12 h-12 flex items-center justify-center rounded-full border border-zinc-700 hover:border-red-600 hover:text-red-500 transition-all duration-200">
+          {isPlaying ? (
+             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          ) : (
+             <svg className="w-6 h-6 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          )}
+        </button>
+
+        <button onClick={nextTrack} className="hover:text-red-500 transition-colors duration-200">
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+        </button>
+      </div>
+
+      <div className="w-1/3 flex justify-end items-center space-x-2">
+        <span className="relative flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+        </span>
+        <span className="text-xs text-zinc-500 tracking-widest uppercase">Node Active</span>
+      </div>
+
+    </div>
   );
 }
