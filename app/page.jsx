@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import DryvrsPlayer from '@/components/DryvrsPlayer';
 
+// Campaign posters are strictly .png files
 const campaignPosters = [
   { src: '/images/poster-01.png', alt: 'Campaign Poster 1' },
   { src: '/images/poster-02.png', alt: 'Campaign Poster 2' },
@@ -24,9 +25,10 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-zinc-300 font-mono relative pb-32">
+    <main className="min-h-screen bg-black text-zinc-300 font-mono relative pb-32 overflow-x-hidden">
       
-      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-black">
+      {/* 1. The Hero Section (The Gatekeeper) */}
+      <section className="relative h-screen w-full flex items-center justify-center bg-black">
         {!isGlitch ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300 z-10">
             <div className="absolute inset-0 z-0">
@@ -57,12 +59,12 @@ export default function Home() {
         )}
       </section>
 
-      {/* Nodes updated to look for .jpg */}
+      {/* 2. The Manifesto Nodes (Updated to .png) */}
       <section className="max-w-6xl mx-auto px-6 py-32 space-y-40 relative z-10">
         
         <div className="flex flex-col md:flex-row items-center gap-12 border-l-2 border-zinc-800 pl-8 md:pl-12">
           <div className="w-full md:w-1/2 relative h-[500px] md:h-[700px]">
-            <Image src="/images/node-01.jpg" alt="Manifesto Node 1" fill className="object-cover grayscale hover:grayscale-0 transition-all duration-700 border border-zinc-900" />
+            <Image src="/images/node-01.png" alt="Manifesto Node 1" fill className="object-cover grayscale hover:grayscale-0 transition-all duration-700 border border-zinc-900" />
           </div>
           <div className="w-full md:w-1/2 space-y-6">
             <h3 className="text-sm font-bold text-red-600 tracking-widest uppercase">Node 01</h3>
@@ -73,7 +75,7 @@ export default function Home() {
 
         <div className="flex flex-col md:flex-row-reverse items-center gap-12 border-r-2 border-zinc-800 pr-8 md:pr-12 text-right">
           <div className="w-full md:w-1/2 relative h-[500px] md:h-[700px]">
-            <Image src="/images/node-02.jpg" alt="Manifesto Node 2" fill className="object-cover grayscale hover:grayscale-0 transition-all duration-700 border border-zinc-900" />
+            <Image src="/images/node-02.png" alt="Manifesto Node 2" fill className="object-cover grayscale hover:grayscale-0 transition-all duration-700 border border-zinc-900" />
           </div>
           <div className="w-full md:w-1/2 space-y-6">
             <h3 className="text-sm font-bold text-red-600 tracking-widest uppercase">Node 02</h3>
@@ -84,7 +86,7 @@ export default function Home() {
 
         <div className="flex flex-col md:flex-row items-center gap-12 border-l-2 border-zinc-800 pl-8 md:pl-12">
           <div className="w-full md:w-1/2 relative h-[500px] md:h-[700px]">
-            <Image src="/images/node-03.jpg" alt="Manifesto Node 3" fill className="object-cover grayscale hover:grayscale-0 transition-all duration-700 border border-zinc-900" />
+            <Image src="/images/node-03.png" alt="Manifesto Node 3" fill className="object-cover grayscale hover:grayscale-0 transition-all duration-700 border border-zinc-900" />
           </div>
           <div className="w-full md:w-1/2 space-y-6">
             <h3 className="text-sm font-bold text-red-600 tracking-widest uppercase">Node 03</h3>
@@ -94,6 +96,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* 3. The Campaign Bubble Array & Manifesto Link */}
       <section className="max-w-4xl mx-auto px-6 pb-20 pt-10 relative z-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-black/60 backdrop-blur-md border border-zinc-900 p-6 rounded-[2rem]">
           <div className="space-y-4 text-center md:text-left">
@@ -112,6 +115,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* 4. Full-Screen Poster Viewer (Modal) */}
       {selectedPosterIndex !== null && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-200">
           <button onClick={() => setSelectedPosterIndex(null)} className="absolute top-6 right-6 md:top-10 md:right-10 text-white hover:text-red-500 text-4xl z-50 transition-colors">✕</button>
@@ -123,6 +127,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* 5. The Pinned Audio Player */}
       <div className="fixed bottom-0 left-0 w-full z-50 border-t border-zinc-900 bg-black/95 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4">
           <DryvrsPlayer />
