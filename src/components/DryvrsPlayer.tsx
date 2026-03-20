@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 
-// STAGE 1: The Playlist Array (Updated with exact Badger State Run filename)
+// The Playlist Array
 const playlist = [
   { id: 1, title: 'Badger State Run', src: '/audio/10-the-badger-state-run.mp3' }, 
   { id: 2, title: 'The Road Belongs', src: '/audio/1-the-road-belongs.mp3' },
@@ -14,19 +14,10 @@ const playlist = [
   { id: 9, title: 'System Reboot', src: '/audio/8-system-reboot.mp3' }
 ];
 
-export default function DryvrsPlayer({ playTrigger }) {
+export default function DryvrsPlayer() {
   const [currentTrack, setCurrentTrack] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
-
-  // THE IGNITION WIRE: Listens for the "Initiate System Override" button click
-  useEffect(() => {
-    if (playTrigger && audioRef.current && !isPlaying) {
-      audioRef.current.play()
-        .then(() => setIsPlaying(true))
-        .catch(err => console.error("Audio playback blocked:", err));
-    }
-  }, [playTrigger, isPlaying]);
 
   const togglePlay = () => {
     if (isPlaying) {
@@ -34,32 +25,34 @@ export default function DryvrsPlayer({ playTrigger }) {
     } else {
       audioRef.current.play();
     }
-    setIsPlaying(!isPlaying);
   };
 
   const nextTrack = () => {
     setCurrentTrack((prev) => (prev + 1) % playlist.length);
-    setIsPlaying(true);
+    // Auto-play the next track when skipping
+    setTimeout(() => {
+      if (audioRef.current) audioRef.current.play();
+    }, 50);
   };
 
   const prevTrack = () => {
     setCurrentTrack((prev) => (prev - 1 + playlist.length) % playlist.length);
-    setIsPlaying(true);
+    setTimeout(() => {
+      if (audioRef.current) audioRef.current.play();
+    }, 50);
   };
-
-  useEffect(() => {
-    if (isPlaying && audioRef.current) {
-      audioRef.current.play();
-    }
-  }, [currentTrack]);
 
   return (
     <div className="flex items-center justify-between py-4 text-zinc-300 font-mono">
       
+      {/* HARDWIRED ID ADDED HERE */}
       <audio 
+        id="dryvrs-audio-core"
         ref={audioRef} 
         src={playlist[currentTrack].src} 
         onEnded={nextTrack}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
       />
 
       <div className="flex flex-col w-1/3">
@@ -89,8 +82,8 @@ export default function DryvrsPlayer({ playTrigger }) {
 
       <div className="w-1/3 flex justify-end items-center space-x-2">
         <span className="relative flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+          <span className={`absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 ${isPlaying ? 'animate-ping' : 'hidden'}`}></span>
+          <span className={`relative inline-flex rounded-full h-3 w-3 ${isPlaying ? 'bg-red-600' : 'bg-zinc-600'}`}></span>
         </span>
         <span className="text-xs text-zinc-500 tracking-widest uppercase">Node Active</span>
       </div>
