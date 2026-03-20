@@ -1,23 +1,32 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 
-// STAGE 1: The Playlist Array (Strict Hyphens)
+// STAGE 1: The Playlist Array (Updated with exact Badger State Run filename)
 const playlist = [
-  { id: 1, title: 'The Road Belongs', src: '/audio/1-the-road-belongs.mp3' },
-  { id: 2, title: 'System Override', src: '/audio/2-system-override.mp3' },
-  { id: 3, title: 'The Tax is Dead', src: '/audio/3-the-tax-is-dead.mp3' },
-  { id: 4, title: 'Sovereign Infrastructure', src: '/audio/4-sovereign-infrastructure.mp3' },
-  { id: 5, title: 'The Decentralized Grid', src: '/audio/5-the-decentralized-grid.mp3' },
-  { id: 6, title: 'The Ledger Ram', src: '/audio/6-the-ledger-ram.mp3' },
-  { id: 7, title: 'Indiana Jones Trap', src: '/audio/7-indiana-jones-trap.mp3' },
-  { id: 8, title: 'System Reboot', src: '/audio/8-system-reboot.mp3' }
-  // Add 9 and 10 here if they exist locally
+  { id: 1, title: 'Badger State Run', src: '/audio/10-the-badger-state-run.mp3' }, 
+  { id: 2, title: 'The Road Belongs', src: '/audio/1-the-road-belongs.mp3' },
+  { id: 3, title: 'System Override', src: '/audio/2-system-override.mp3' },
+  { id: 4, title: 'The Tax is Dead', src: '/audio/3-the-tax-is-dead.mp3' },
+  { id: 5, title: 'Sovereign Infrastructure', src: '/audio/4-sovereign-infrastructure.mp3' },
+  { id: 6, title: 'The Decentralized Grid', src: '/audio/5-the-decentralized-grid.mp3' },
+  { id: 7, title: 'The Ledger Ram', src: '/audio/6-the-ledger-ram.mp3' },
+  { id: 8, title: 'Indiana Jones Trap', src: '/audio/7-indiana-jones-trap.mp3' },
+  { id: 9, title: 'System Reboot', src: '/audio/8-system-reboot.mp3' }
 ];
 
-export default function DryvrsPlayer() {
+export default function DryvrsPlayer({ playTrigger }) {
   const [currentTrack, setCurrentTrack] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
+
+  // THE IGNITION WIRE: Listens for the "Initiate System Override" button click
+  useEffect(() => {
+    if (playTrigger && audioRef.current && !isPlaying) {
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(err => console.error("Audio playback blocked:", err));
+    }
+  }, [playTrigger, isPlaying]);
 
   const togglePlay = () => {
     if (isPlaying) {
